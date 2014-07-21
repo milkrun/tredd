@@ -1,0 +1,31 @@
+{
+  "uuid": "fc8f2f9d-5531-44bd-982f-95278c3da6c2",
+  "shortName": "Tredd",
+  "longName": "Tredd by Milk Run",
+  "companyName": "Milk Run",
+  "versionCode": 1,
+  "versionLabel": "1.0.0",
+  "watchapp": {
+    "watchface": true
+  },
+  "appKeys": {},
+  "resources": {
+    "media": [
+      {
+        "type": "png",
+        "name": "IMAGE_BACKGROUND",
+        "file": "images/background75.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_TREAD_60",
+        "file": "images/tread60.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_TREAD_12",
+        "file": "images/tread12.png"
+      }
+    ]
+  }
+}
