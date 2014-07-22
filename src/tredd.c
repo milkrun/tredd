@@ -42,58 +42,21 @@ static void deinit(void) {
 	gbitmap_destroy(tread_hour_1_image);
 }
 
-// void handle_init(AppContextRef ctx) {
-//   (void)ctx;
+// static void set_container_image(GBitmap **bmp_image, BitmapLayer *bmp_layer, const int resource_id, GPoint origin) {
+//   GBitmap *old_image = *bmp_image;
 // 
-//   window_init(&window, "Tread");
-//   window_stack_push(&window, true /* Animated */);
-//   window_set_background_color(&window, GColorBlack);
+//   *bmp_image = gbitmap_create_with_resource(resource_id);
+//   GRect frame = (GRect) {
+//     .origin = origin,
+//     .size = (*bmp_image)->bounds.size
+//   };
+//   bitmap_layer_set_bitmap(bmp_layer, *bmp_image);
+//   layer_set_frame(bitmap_layer_get_layer(bmp_layer), frame);
 // 
-//   resource_init_current_app(&APP_RESOURCES);
-//   
-//   bmp_init_container(RESOURCE_ID_IMAGE_TREAD_60, &tread_min_1);
-//   bmp_init_container(RESOURCE_ID_IMAGE_TREAD_60, &tread_min_2);
-//   bmp_init_container(RESOURCE_ID_IMAGE_TREAD_12, &tread_hour_1);
-//   // bmp_init_container(RESOURCE_ID_IMAGE_TREAD_12, &tread_hour_2);
-//   
-//   tread_min_1.layer.layer.frame.origin.x = min_x;
-//   tread_min_1.layer.layer.frame.origin.y = 10;
-//   tread_min_2.layer.layer.frame.origin.x = min_x;
-//   tread_min_2.layer.layer.frame.origin.y = 10;
-//   
-//   tread_hour_1.layer.layer.frame.origin.x = 10;
-//   tread_hour_1.layer.layer.frame.origin.y = hour_y;
-//   
-//   // tread_hour_2.layer.layer.frame.origin.x = 10;
-//   // tread_hour_2.layer.layer.frame.origin.y = hour_y;
-// 
-//   // layer_add_child(&window.layer, &tread_hour_2.layer.layer);
-//   
-//   layer_add_child(&window.layer, &tread_hour_1.layer.layer);
-// 
-// 
-//   layer_add_child(&window.layer, &tread_min_1.layer.layer);
-//   layer_add_child(&window.layer, &tread_min_2.layer.layer);
-//   
-// 
-// 
+//   if (old_image != NULL) {
+//   	gbitmap_destroy(old_image);
+//   }
 // }
-
-static void set_container_image(GBitmap **bmp_image, BitmapLayer *bmp_layer, const int resource_id, GPoint origin) {
-  GBitmap *old_image = *bmp_image;
-
-  *bmp_image = gbitmap_create_with_resource(resource_id);
-  GRect frame = (GRect) {
-    .origin = origin,
-    .size = (*bmp_image)->bounds.size
-  };
-  bitmap_layer_set_bitmap(bmp_layer, *bmp_image);
-  layer_set_frame(bitmap_layer_get_layer(bmp_layer), frame);
-
-  if (old_image != NULL) {
-  	gbitmap_destroy(old_image);
-  }
-}
 
 static void update_display(struct tm *current_time) {
 
@@ -118,9 +81,8 @@ static void update_display(struct tm *current_time) {
   
   	APP_LOG(APP_LOG_LEVEL_DEBUG, "TREDD: y y2 %d %d", y, y2);
 
-  
-//    layer_set_frame(bitmap_layer_get_layer(tread_min_1_layer), GRect(min_x -100, y, min_width + 100, min_height));
-    layer_set_frame(bitmap_layer_get_layer(tread_min_1_layer), GRect(min_x -60, y, 100, min_height));
+    
+	layer_set_frame(bitmap_layer_get_layer(tread_min_1_layer), GRect(min_x, y, min_width, min_height));
 
   
 //   layer_set_frame((Layer*) (&tread_min_1.layer.layer), GRect(min_x, y, min_width, min_height));
@@ -155,11 +117,6 @@ static void handle_minute_tick(struct tm *tick_time, TimeUnits units_changed) {
 static void init(void) {
 	APP_LOG(APP_LOG_LEVEL_DEBUG, "TREDD: init being called");
 
-// 	memset(&time_digits_layers, 0, sizeof(time_digits_layers));
-// 	memset(&time_digits_images, 0, sizeof(time_digits_images));
-// 	memset(&date_digits_layers, 0, sizeof(date_digits_layers));
-// 	memset(&date_digits_images, 0, sizeof(date_digits_images));
-
 	window = window_create();
 	if (window == NULL) {
 		APP_LOG(APP_LOG_LEVEL_DEBUG, "OOM: couldn't allocate window");
@@ -167,30 +124,39 @@ static void init(void) {
 	}
 	window_stack_push(window, true /* Animated */);
     Layer *window_layer = window_get_root_layer(window);
-      
-      background_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BACKGROUND);
-      background_layer = bitmap_layer_create(layer_get_frame(window_layer));
-      bitmap_layer_set_bitmap(background_layer, background_image);
-      layer_add_child(window_layer, bitmap_layer_get_layer(background_layer));
+    
+    // load background
+	background_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BACKGROUND);
+	background_layer = bitmap_layer_create(layer_get_frame(window_layer));
+	bitmap_layer_set_bitmap(background_layer, background_image);
+	layer_add_child(window_layer, bitmap_layer_get_layer(background_layer));
 
+	// load first copy of hour tread
 	tread_hour_1_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_TREAD_12);
 	tread_hour_1_layer = bitmap_layer_create(layer_get_frame(window_layer));
 	bitmap_layer_set_bitmap(tread_hour_1_layer, tread_hour_1_image);
 	layer_add_child(window_layer, bitmap_layer_get_layer(tread_hour_1_layer));
 
+	// load first copy of minute tread
 	tread_min_1_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_TREAD_60);
-	tread_min_1_layer = bitmap_layer_create(layer_get_frame(window_layer));
+ 
+	GRect min_frame = (GRect) {
+		.origin = { .x = min_x, .y = 43 },
+		.size = tread_min_1_image->bounds.size
+	};
+
+	tread_min_1_layer = bitmap_layer_create(min_frame);
 	bitmap_layer_set_bitmap(tread_min_1_layer, tread_min_1_image);
 	layer_add_child(window_layer, bitmap_layer_get_layer(tread_min_1_layer));
 
 
-  time_t now = time(NULL);
-  struct tm *tick_time = localtime(&now);
+	time_t now = time(NULL);
+	struct tm *tick_time = localtime(&now);
 
-  update_display(tick_time);
+	update_display(tick_time);
 
 //   tick_timer_service_subscribe(MINUTE_UNIT, handle_minute_tick);
-   tick_timer_service_subscribe(SECOND_UNIT, handle_minute_tick);
+	tick_timer_service_subscribe(SECOND_UNIT, handle_minute_tick);
 
 
 }
@@ -252,21 +218,3 @@ int main(void) {
   deinit();
 }
 
-
-// void handle_deinit(AppContextRef ctx) {
-//   (void)ctx;
-// 
-//   bmp_deinit_container(&tread_min_1);
-// }
-
-// void pbl_main(void *params) {
-//   PebbleAppHandlers handlers = {
-//     .init_handler = &handle_init,
-//     .deinit_handler = &handle_deinit,
-//     .tick_info = {
-//       .tick_handler = &handle_second_tick,
-//       .tick_units = SECOND_UNIT
-//     }
-//   };
-//   app_event_loop(params, &handlers);
-// }
