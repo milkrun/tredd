@@ -17,8 +17,15 @@ static Window *window;
 static GBitmap *background_image;
 static BitmapLayer *background_layer;
 
+// you need 2 minute treads to appear as a continuous
+
 static GBitmap *tread_min_1_image;
 static BitmapLayer *tread_min_1_layer;
+
+static GBitmap *tread_min_2_image;
+static BitmapLayer *tread_min_2_layer;
+
+// 2 hour treads
 
 static GBitmap *tread_hour_1_image;
 static BitmapLayer *tread_hour_1_layer;
@@ -41,22 +48,6 @@ static void deinit(void) {
 	bitmap_layer_destroy(tread_hour_1_layer);
 	gbitmap_destroy(tread_hour_1_image);
 }
-
-// static void set_container_image(GBitmap **bmp_image, BitmapLayer *bmp_layer, const int resource_id, GPoint origin) {
-//   GBitmap *old_image = *bmp_image;
-// 
-//   *bmp_image = gbitmap_create_with_resource(resource_id);
-//   GRect frame = (GRect) {
-//     .origin = origin,
-//     .size = (*bmp_image)->bounds.size
-//   };
-//   bitmap_layer_set_bitmap(bmp_layer, *bmp_image);
-//   layer_set_frame(bitmap_layer_get_layer(bmp_layer), frame);
-// 
-//   if (old_image != NULL) {
-//   	gbitmap_destroy(old_image);
-//   }
-// }
 
 static void update_display(struct tm *current_time) {
 
@@ -83,6 +74,8 @@ static void update_display(struct tm *current_time) {
 
     
 	layer_set_frame(bitmap_layer_get_layer(tread_min_1_layer), GRect(min_x, y, min_width, min_height));
+
+	layer_set_frame(bitmap_layer_get_layer(tread_min_2_layer), GRect(min_x, y2, min_width, min_height));
 
   
 //   layer_set_frame((Layer*) (&tread_min_1.layer.layer), GRect(min_x, y, min_width, min_height));
@@ -148,6 +141,14 @@ static void init(void) {
 	tread_min_1_layer = bitmap_layer_create(min_frame);
 	bitmap_layer_set_bitmap(tread_min_1_layer, tread_min_1_image);
 	layer_add_child(window_layer, bitmap_layer_get_layer(tread_min_1_layer));
+
+	// load second copy of minute tread
+	tread_min_2_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_TREAD_60);
+ 
+	tread_min_2_layer = bitmap_layer_create(min_frame);
+	bitmap_layer_set_bitmap(tread_min_2_layer, tread_min_2_image);
+	layer_add_child(window_layer, bitmap_layer_get_layer(tread_min_2_layer));
+
 
 
 	time_t now = time(NULL);
