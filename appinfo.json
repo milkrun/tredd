@@ -25,7 +25,13 @@
         "type": "png",
         "name": "IMAGE_TREAD_12",
         "file": "images/tread12.png"
+      },
+      {
+        "type": "png-trans",
+        "name": "IMAGE_PANDA",
+        "file": "images/panda.png"
       }
+
     ]
   }
 }

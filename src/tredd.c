@@ -23,6 +23,13 @@ static BitmapLayer *tread_hour_1_layer;
 static GBitmap *tread_hour_2_image;
 static BitmapLayer *tread_hour_2_layer;
 
+// overlay
+
+static GBitmap *white_image;
+static GBitmap *black_image;
+static BitmapLayer *white_image_layer;
+static BitmapLayer *black_image_layer;
+
 
 
 static const int min_width = 60;
@@ -31,7 +38,7 @@ static const int min_x = 144 - 60 - 10;
 
 static const int hour_width = 744;
 static const int hour_height = 40;
-static const int hour_y = 84 - 20;
+static const int hour_y = 84 - 5;
 
 
 static void deinit(void) {
@@ -138,8 +145,6 @@ static void init(void) {
 // 	layer_add_child(window_layer, bitmap_layer_get_layer(tread_hour_2_layer));
 
 
-
-
 	// load first copy of minute tread
 	tread_min_1_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_TREAD_60);
  
@@ -159,6 +164,32 @@ static void init(void) {
 	bitmap_layer_set_bitmap(tread_min_2_layer, tread_min_2_image);
 	layer_add_child(window_layer, bitmap_layer_get_layer(tread_min_2_layer));
 
+	// add the transparent overlay
+	
+	white_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_PANDA_WHITE);
+	black_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_PANDA_BLACK);
+
+  	GRect bounds = layer_get_bounds(window_layer);
+	
+	const GPoint center = grect_center_point(&bounds);
+	GRect image_frame = (GRect) { .origin = center, .size = white_image->bounds.size };
+	image_frame.origin.x -= white_image->bounds.size.w/2;
+	image_frame.origin.y -= white_image->bounds.size.h/2;
+
+	// Use GCompOpOr to display the white portions of the image
+	white_image_layer = bitmap_layer_create(image_frame);
+	bitmap_layer_set_bitmap(white_image_layer, white_image);
+	bitmap_layer_set_compositing_mode(white_image_layer, GCompOpOr);
+	layer_add_child(window_layer, bitmap_layer_get_layer(white_image_layer));
+
+	// Use GCompOpClear to display the black portions of the image
+	black_image_layer = bitmap_layer_create(image_frame);
+	bitmap_layer_set_bitmap(black_image_layer, black_image);
+	bitmap_layer_set_compositing_mode(black_image_layer, GCompOpClear);
+	layer_add_child(window_layer, bitmap_layer_get_layer(black_image_layer));
+
+
+	// update time after init to avoid the unsightly wait
 
 
 	time_t now = time(NULL);
