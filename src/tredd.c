@@ -37,8 +37,8 @@ static const int min_height = 360;
 static const int min_x = 144 - 60 - 10;
 
 static const int hour_width = 744;
-static const int hour_height = 40;
-static const int hour_y = 84 - 5;
+static const int hour_height = 46;
+static const int hour_y = 84 - 8;
 
 
 static void deinit(void) {
@@ -85,13 +85,11 @@ static void update_display(struct tm *current_time) {
    int hours = current_time->tm_hour;
 //	int hours = current_time->tm_sec;
   
-// 	if (hours > 12) {
-// 		hours = hours - 12;
-// 	}
-
 	hours = hours % 12;
   
-	int x = 5 - hours * 62 ;
+  	// hours = 0;  // test noon
+  
+	int x = 10 - hours * 62 ;
   
     	APP_LOG(APP_LOG_LEVEL_DEBUG, "TREDD: hours %d x %d", hours, x);
 
@@ -203,6 +201,12 @@ static void init(void) {
 
 }
 
+int main(void) {
+	init();
+	app_event_loop();
+	deinit();
+}
+
 
 
 
@@ -253,10 +257,4 @@ static void init(void) {
 //   
 //   
 // }
-
-int main(void) {
-  init();
-  app_event_loop();
-  deinit();
-}
 
