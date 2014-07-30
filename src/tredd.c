@@ -12,7 +12,6 @@ static BitmapLayer *background_layer;
 static GBitmap *tread_min_1_image;
 static BitmapLayer *tread_min_1_layer;
 
-static GBitmap *tread_min_2_image;
 static BitmapLayer *tread_min_2_layer;
 
 // 2 hour treads
@@ -20,7 +19,7 @@ static BitmapLayer *tread_min_2_layer;
 static GBitmap *tread_hour_1_image;
 static BitmapLayer *tread_hour_1_layer;
 
-static GBitmap *tread_hour_2_image;
+// static GBitmap *tread_hour_2_image;
 static BitmapLayer *tread_hour_2_layer;
 
 static PropertyAnimation *hour_animation_1;
@@ -223,15 +222,15 @@ static void init(void) {
 
 	// second hour tread
 
-	tread_hour_2_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_TREAD_12);
+// 	tread_hour_2_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_TREAD_12);
 		
 	GRect hour_frame_2 = (GRect) {
-		.origin = { .x = 42, .y = hour_y + 60},
+		.origin = { .x = 42, .y = hour_y},
 		.size = tread_hour_1_image->bounds.size
 	};
 	
 	tread_hour_2_layer = bitmap_layer_create(hour_frame_2);
-	bitmap_layer_set_bitmap(tread_hour_2_layer, tread_hour_2_image);
+	bitmap_layer_set_bitmap(tread_hour_2_layer, tread_hour_1_image);
 	layer_add_child(window_layer, bitmap_layer_get_layer(tread_hour_2_layer));
 
 	hour_animation_2 = NULL;
@@ -249,35 +248,35 @@ static void init(void) {
 	layer_add_child(window_layer, bitmap_layer_get_layer(tread_min_1_layer));
 
 	// load second copy of minute tread
-	tread_min_2_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_TREAD_60);
+// 	tread_min_2_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_TREAD_60);
  
 	tread_min_2_layer = bitmap_layer_create(min_frame);
-	bitmap_layer_set_bitmap(tread_min_2_layer, tread_min_2_image);
+	bitmap_layer_set_bitmap(tread_min_2_layer, tread_min_1_image);
 	layer_add_child(window_layer, bitmap_layer_get_layer(tread_min_2_layer));
 
 	// add the transparent overlay
 	
-// 	white_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_PANDA_WHITE);
-// 	black_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_PANDA_BLACK);
-// 
-//   	GRect bounds = layer_get_bounds(window_layer);
-// 	
-// 	const GPoint center = grect_center_point(&bounds);
-// 	GRect image_frame = (GRect) { .origin = center, .size = white_image->bounds.size };
-// 	image_frame.origin.x -= white_image->bounds.size.w/2;
-// 	image_frame.origin.y -= white_image->bounds.size.h/2;
-// 
-// 	// Use GCompOpOr to display the white portions of the image
-// 	white_image_layer = bitmap_layer_create(image_frame);
-// 	bitmap_layer_set_bitmap(white_image_layer, white_image);
-// 	bitmap_layer_set_compositing_mode(white_image_layer, GCompOpOr);
-// 	layer_add_child(window_layer, bitmap_layer_get_layer(white_image_layer));
-// 
-// 	// Use GCompOpClear to display the black portions of the image
-// 	black_image_layer = bitmap_layer_create(image_frame);
-// 	bitmap_layer_set_bitmap(black_image_layer, black_image);
-// 	bitmap_layer_set_compositing_mode(black_image_layer, GCompOpClear);
-// 	layer_add_child(window_layer, bitmap_layer_get_layer(black_image_layer));
+	white_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_PANDA_WHITE);
+	black_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_PANDA_BLACK);
+
+  	GRect bounds = layer_get_bounds(window_layer);
+	
+	const GPoint center = grect_center_point(&bounds);
+	GRect image_frame = (GRect) { .origin = center, .size = white_image->bounds.size };
+	image_frame.origin.x -= white_image->bounds.size.w/2;
+	image_frame.origin.y -= white_image->bounds.size.h/2;
+
+	// Use GCompOpOr to display the white portions of the image
+	white_image_layer = bitmap_layer_create(image_frame);
+	bitmap_layer_set_bitmap(white_image_layer, white_image);
+	bitmap_layer_set_compositing_mode(white_image_layer, GCompOpOr);
+	layer_add_child(window_layer, bitmap_layer_get_layer(white_image_layer));
+
+	// Use GCompOpClear to display the black portions of the image
+	black_image_layer = bitmap_layer_create(image_frame);
+	bitmap_layer_set_bitmap(black_image_layer, black_image);
+	bitmap_layer_set_compositing_mode(black_image_layer, GCompOpClear);
+	layer_add_child(window_layer, bitmap_layer_get_layer(black_image_layer));
 
 
 	// update time after init to avoid the unsightly wait
