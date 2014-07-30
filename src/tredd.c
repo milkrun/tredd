@@ -64,12 +64,14 @@ static int getHourX(int h) {
 	return x;
 }
 
+static int last_hour = -1;
+
 static void update_display(struct tm *current_time) {
 
   // update_hand_positions(); // TODO: Pass tick event
   
-//  int seconds = current_time->tm_min;
- int seconds = current_time->tm_sec;
+ int seconds = current_time->tm_min;
+//  int seconds = current_time->tm_sec;
   
   int y = 84 - (6 * seconds);  
   
@@ -95,17 +97,23 @@ static void update_display(struct tm *current_time) {
     
   // int hours = seconds % 12;
   
-//   int hours = current_time->tm_hour;
+	int hours = current_time->tm_hour;
+	
 //	int hours = current_time->tm_sec / 4;
 
-	int hours = test_hours;
+// 	int hours = test_hours;
 
-	if (test_hours_count++ > 2) {
-		test_hours_count = 0;
-		test_hours++;
-	} else {
-		return;
+// 	if (test_hours_count++ > 2) {
+// 		test_hours_count = 0;
+// 		test_hours++;
+// 	} else {
+// 		return;
+//   	}
+  	
+  	if (hours == last_hour) {
+  		return;
   	}
+  	last_hour = hours;
   	
 	hours = hours % 12;
   
@@ -117,7 +125,6 @@ static void update_display(struct tm *current_time) {
 
 //   layer_set_frame((Layer*) (&tread_hour_1.layer.layer), GRect(x, hour_y, hour_width, hour_height));
   
-  	// GRect hour_rect = GRect(x, hour_y, hour_width, hour_height);
   	GRect hour_rect = (GRect) {
 		.origin = { .x = x, .y = hour_y },
 		.size = tread_hour_1_image->bounds.size
@@ -125,7 +132,6 @@ static void update_display(struct tm *current_time) {
 
   	int x2 = getHourX(hours - 1);
   
-    // GRect hour_start_rect = GRect(x2, hour_y, hour_width, hour_height);
   	GRect hour_start_rect = (GRect) {
 		.origin = { .x = x2, .y = hour_y },
 		.size = tread_hour_1_image->bounds.size
