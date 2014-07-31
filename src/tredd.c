@@ -46,13 +46,37 @@ static const int hour_y = 84 - 8;
 
 
 static void deinit(void) {
+
+	layer_remove_from_parent(bitmap_layer_get_layer(background_layer));
+	bitmap_layer_destroy(background_layer);
+	gbitmap_destroy(background_image);
+
 	layer_remove_from_parent(bitmap_layer_get_layer(tread_min_1_layer));
 	bitmap_layer_destroy(tread_min_1_layer);
+	layer_remove_from_parent(bitmap_layer_get_layer(tread_min_2_layer));
+	bitmap_layer_destroy(tread_min_2_layer);
 	gbitmap_destroy(tread_min_1_image);
 	
 	layer_remove_from_parent(bitmap_layer_get_layer(tread_hour_1_layer));
 	bitmap_layer_destroy(tread_hour_1_layer);
+	layer_remove_from_parent(bitmap_layer_get_layer(tread_hour_2_layer));
+	bitmap_layer_destroy(tread_hour_2_layer);
 	gbitmap_destroy(tread_hour_1_image);
+	
+	layer_remove_from_parent(bitmap_layer_get_layer(white_image_layer));
+	bitmap_layer_destroy(white_image_layer);
+	gbitmap_destroy(white_image);
+
+	layer_remove_from_parent(bitmap_layer_get_layer(black_image_layer));
+	bitmap_layer_destroy(black_image_layer);
+	gbitmap_destroy(black_image);
+
+	property_animation_destroy(hour_animation_1);
+	property_animation_destroy(hour_animation_2);
+  
+	window_destroy(window);
+
+
 }
 
 static int test_hours = 0;
