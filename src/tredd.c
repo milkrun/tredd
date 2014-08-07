@@ -25,8 +25,6 @@ static BitmapLayer *tread_hour_2_layer;
 static PropertyAnimation *hour_animation_1;
 static PropertyAnimation *hour_animation_2;
 
-
-
 // overlay
 
 static GBitmap *white_image;
@@ -34,6 +32,14 @@ static GBitmap *black_image;
 static BitmapLayer *white_image_layer;
 static BitmapLayer *black_image_layer;
 
+//
+
+static int date_timer = 0;
+
+// static const int TIME 
+
+
+// static int MODE = TIME;
 
 
 static const int min_width = 60;
@@ -45,42 +51,8 @@ static const int hour_height = 46;
 static const int hour_y = 84 - 8;
 
 
-static void deinit(void) {
-
-	layer_remove_from_parent(bitmap_layer_get_layer(background_layer));
-	bitmap_layer_destroy(background_layer);
-	gbitmap_destroy(background_image);
-
-	layer_remove_from_parent(bitmap_layer_get_layer(tread_min_1_layer));
-	bitmap_layer_destroy(tread_min_1_layer);
-	layer_remove_from_parent(bitmap_layer_get_layer(tread_min_2_layer));
-	bitmap_layer_destroy(tread_min_2_layer);
-	gbitmap_destroy(tread_min_1_image);
-	
-	layer_remove_from_parent(bitmap_layer_get_layer(tread_hour_1_layer));
-	bitmap_layer_destroy(tread_hour_1_layer);
-	layer_remove_from_parent(bitmap_layer_get_layer(tread_hour_2_layer));
-	bitmap_layer_destroy(tread_hour_2_layer);
-	gbitmap_destroy(tread_hour_1_image);
-	
-	layer_remove_from_parent(bitmap_layer_get_layer(white_image_layer));
-	bitmap_layer_destroy(white_image_layer);
-	gbitmap_destroy(white_image);
-
-	layer_remove_from_parent(bitmap_layer_get_layer(black_image_layer));
-	bitmap_layer_destroy(black_image_layer);
-	gbitmap_destroy(black_image);
-
-	property_animation_destroy(hour_animation_1);
-	property_animation_destroy(hour_animation_2);
-  
-	window_destroy(window);
-
-
-}
-
-static int test_hours = 0;
-static int test_hours_count = 0;
+// static int test_hours = 0;
+// static int test_hours_count = 0;
 
 static int getHourX(int h) {
 	int x = 10 - h * 62 ;
@@ -89,14 +61,44 @@ static int getHourX(int h) {
 
 static int last_hour = -1;
 
+
+static void show_this(int hour, int minutes);
+
+
 static void update_display(struct tm *current_time) {
 
-  // update_hand_positions(); // TODO: Pass tick event
+  	APP_LOG(APP_LOG_LEVEL_DEBUG, "TREDD: tick ---");
+
+	if (date_timer > 0) {
+		date_timer--;
+  		APP_LOG(APP_LOG_LEVEL_DEBUG, "TREDD: date_timer %d", date_timer);
+		if (date_timer == 0) {
+  			APP_LOG(APP_LOG_LEVEL_DEBUG, "TREDD: switch to time mode");
+		}
+		
+		APP_LOG(APP_LOG_LEVEL_DEBUG, "TREDD: date mode %d %d ", current_time->tm_mon, current_time->tm_mday);
+		
+		
+		int month = current_time->tm_mon + 1;
+		if (month == 12) {
+			month = 0;
+		}
+		
+		show_this(month, current_time->tm_mday);
+
+	} else { 
+	
+		// show time
+	
+		show_this(current_time->tm_hour, current_time->tm_min);
+	
+	}
+	
+}
   
- int seconds = current_time->tm_min;
-//  int seconds = current_time->tm_sec;
-  
-  int y = 84 - (6 * seconds);  
+static void show_this(int hour, int minutes) {
+ 
+  	int y = 84 - (6 * minutes);  
   
   
   // if y is greater than 0, tread 2 should be above tread 1
@@ -110,41 +112,39 @@ static void update_display(struct tm *current_time) {
       y2 = y + min_height;
   }
   
-  	APP_LOG(APP_LOG_LEVEL_DEBUG, "TREDD: y y2 %d %d", y, y2);
+//   	APP_LOG(APP_LOG_LEVEL_DEBUG, "TREDD: y y2 %d %d", y, y2);
 
     
 	layer_set_frame(bitmap_layer_get_layer(tread_min_1_layer), GRect(min_x, y, min_width, min_height));
 
 	layer_set_frame(bitmap_layer_get_layer(tread_min_2_layer), GRect(min_x, y2, min_width, min_height));
 
-    
-  // int hours = seconds % 12;
   
-	int hours = current_time->tm_hour;
+//	int hour = current_time->tm_hour;
 	
-//	int hours = current_time->tm_sec / 4;
+//	int hour = current_time->tm_sec / 4;
 
-// 	int hours = test_hours;
+// 	int hour = test_hour;
 
-// 	if (test_hours_count++ > 2) {
-// 		test_hours_count = 0;
-// 		test_hours++;
+// 	if (test_hour_count++ > 2) {
+// 		test_hour_count = 0;
+// 		test_hour++;
 // 	} else {
 // 		return;
 //   	}
   	
-  	if (hours == last_hour) {
+  	if (hour == last_hour) {
   		return;
   	}
-  	last_hour = hours;
+  	last_hour = hour;
   	
-	hours = hours % 12;
+	hour = hour % 12;
   
-  	// hours = 0;  // test noon
+  	// hour = 0;  // test noon
   
-	int x = 10 - hours * 62 ;
+	int x = 10 - hour * 62 ;
   
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "TREDD: hours %d x %d", hours, x);
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "TREDD: hour %d x %d", hour, x);
 
 //   layer_set_frame((Layer*) (&tread_hour_1.layer.layer), GRect(x, hour_y, hour_width, hour_height));
   
@@ -153,7 +153,7 @@ static void update_display(struct tm *current_time) {
 		.size = tread_hour_1_image->bounds.size
 	};
 
-  	int x2 = getHourX(hours - 1);
+  	int x2 = getHourX(hour - 1);
   
   	GRect hour_start_rect = (GRect) {
 		.origin = { .x = x2, .y = hour_y },
@@ -213,10 +213,25 @@ static void handle_minute_tick(struct tm *tick_time, TimeUnits units_changed) {
   update_display(tick_time);
 }
 
+// void accel_tap_handler(AccelAxisType axis, int32_t direction) {
+//   // Process tap on ACCEL_AXIS_X, ACCEL_AXIS_Y or ACCEL_AXIS_Z
+//   // Direction is 1 or -1
+//   
+//   	APP_LOG(APP_LOG_LEVEL_DEBUG, "TREDD: being tapped");
+//   	
+//   	// switching to different mode
+//   	// create a timer to switch back to normal mode
+// 
+// 	date_timer = 10;
+// }
+
+
+
 static void init(void) {
 	APP_LOG(APP_LOG_LEVEL_DEBUG, "TREDD: init being called");
 
 	window = window_create();
+	window_set_fullscreen(window, true);
 	if (window == NULL) {
 		APP_LOG(APP_LOG_LEVEL_DEBUG, "OOM: couldn't allocate window");
 		return;
@@ -314,7 +329,43 @@ static void init(void) {
 //   tick_timer_service_subscribe(MINUTE_UNIT, handle_minute_tick);
 	tick_timer_service_subscribe(SECOND_UNIT, handle_minute_tick);
 
+// 	accel_tap_service_subscribe(accel_tap_handler);
 
+
+}
+
+static void deinit(void) {
+
+	layer_remove_from_parent(bitmap_layer_get_layer(background_layer));
+	bitmap_layer_destroy(background_layer);
+	gbitmap_destroy(background_image);
+
+	layer_remove_from_parent(bitmap_layer_get_layer(tread_min_1_layer));
+	bitmap_layer_destroy(tread_min_1_layer);
+	layer_remove_from_parent(bitmap_layer_get_layer(tread_min_2_layer));
+	bitmap_layer_destroy(tread_min_2_layer);
+	gbitmap_destroy(tread_min_1_image);
+	
+	layer_remove_from_parent(bitmap_layer_get_layer(tread_hour_1_layer));
+	bitmap_layer_destroy(tread_hour_1_layer);
+	layer_remove_from_parent(bitmap_layer_get_layer(tread_hour_2_layer));
+	bitmap_layer_destroy(tread_hour_2_layer);
+	gbitmap_destroy(tread_hour_1_image);
+	
+	layer_remove_from_parent(bitmap_layer_get_layer(white_image_layer));
+	bitmap_layer_destroy(white_image_layer);
+	gbitmap_destroy(white_image);
+
+	layer_remove_from_parent(bitmap_layer_get_layer(black_image_layer));
+	bitmap_layer_destroy(black_image_layer);
+	gbitmap_destroy(black_image);
+
+	property_animation_destroy(hour_animation_1);
+	property_animation_destroy(hour_animation_2);
+  
+	window_destroy(window);
+
+//   	accel_tap_service_unsubscribe();
 }
 
 int main(void) {
