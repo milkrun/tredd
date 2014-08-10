@@ -1,10 +1,10 @@
 {
   "uuid": "fc8f2f9d-5531-44bd-982f-95278c3da6c2",
-  "shortName": "Tredd",
-  "longName": "Tredd by Milk Run",
-  "companyName": "milkrun.com",
-  "versionCode": 2,
-  "versionLabel": "1.0.1",
+  "shortName": "Tredd Face",
+  "longName": "Tredd Face by Milk Run",
+  "companyName": "Milk Run",
+  "versionCode": 4,
+  "versionLabel": "1.1",
   "watchapp": {
     "watchface": true
   },

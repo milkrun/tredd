@@ -36,10 +36,17 @@ static BitmapLayer *black_image_layer;
 
 static int date_timer = 0;
 
-// static const int TIME 
+static const int TIME = 0;
+static const int DATE = 1;
+static const int CHRONO = 2;
 
 
-// static int MODE = TIME;
+static int mode = 0; // TIME
+
+static int chrono_minutes = 0;
+static int chrono_seconds = 0;
+
+static int chrono_running = 0;	// stopped 0 running 1
 
 
 static const int min_width = 60;
@@ -49,7 +56,6 @@ static const int min_x = 144 - 60 - 10;
 static const int hour_width = 744;
 static const int hour_height = 46;
 static const int hour_y = 84 - 8;
-
 
 // static int test_hours = 0;
 // static int test_hours_count = 0;
@@ -65,18 +71,48 @@ static int last_hour = -1;
 static void show_this(int hour, int minutes);
 
 
+
+// I want to vibe the watch 5 seconds before the hour
+// between 9am and 9pm
+
+static void hour_vibe(struct tm *current_time) {
+
+	if (current_time->tm_hour < 7) 
+		return;
+
+	if (current_time->tm_hour > 20) 
+		return;
+
+	if (current_time->tm_min != 59)
+		return;
+
+	if (current_time->tm_sec != 55)
+		return;
+		
+	vibes_short_pulse();
+
+}
+
+
+
 static void update_display(struct tm *current_time) {
 
-  	APP_LOG(APP_LOG_LEVEL_DEBUG, "TREDD: tick ---");
+	if (mode == TIME) {
+  		APP_LOG(APP_LOG_LEVEL_DEBUG, "TREDD: tick --- %d %d %d", current_time->tm_hour, current_time->tm_min, current_time->tm_sec);
+  	} else if (mode == DATE) {
+  		APP_LOG(APP_LOG_LEVEL_DEBUG, "TREDD: date ---");
+  	} else if (mode == CHRONO) {
+  		APP_LOG(APP_LOG_LEVEL_DEBUG, "TREDD: chrono ---");
+  	} 
 
-	if (date_timer > 0) {
-		date_timer--;
-  		APP_LOG(APP_LOG_LEVEL_DEBUG, "TREDD: date_timer %d", date_timer);
-		if (date_timer == 0) {
-  			APP_LOG(APP_LOG_LEVEL_DEBUG, "TREDD: switch to time mode");
-		}
-		
-		APP_LOG(APP_LOG_LEVEL_DEBUG, "TREDD: date mode %d %d ", current_time->tm_mon, current_time->tm_mday);
+	if (mode == DATE) {
+// 		date_timer--;
+//   		APP_LOG(APP_LOG_LEVEL_DEBUG, "TREDD: date_timer %d", date_timer);
+// 		if (date_timer == 0) {
+//   			APP_LOG(APP_LOG_LEVEL_DEBUG, "TREDD: switch to time mode");
+// 		}
+// 		
+// 		APP_LOG(APP_LOG_LEVEL_DEBUG, "TREDD: date mode %d %d ", current_time->tm_mon, current_time->tm_mday);
 		
 		
 		int month = current_time->tm_mon + 1;
@@ -86,12 +122,27 @@ static void update_display(struct tm *current_time) {
 		
 		show_this(month, current_time->tm_mday);
 
-	} else { 
+	} else if (mode == TIME) { 
 	
 		// show time
 	
 		show_this(current_time->tm_hour, current_time->tm_min);
 	
+		hour_vibe(current_time);
+	
+	} else if (mode == CHRONO) { 
+	
+		// show time
+	
+		show_this(chrono_minutes, chrono_seconds);
+	
+		if (chrono_running == 1) {
+			chrono_seconds++;
+			if (chrono_seconds > 59) {
+				chrono_seconds = 0;
+				chrono_minutes++;
+			}
+		}
 	}
 	
 }
@@ -226,6 +277,53 @@ static void handle_minute_tick(struct tm *tick_time, TimeUnits units_changed) {
 // }
 
 
+void select_single_click_handler(ClickRecognizerRef recognizer, void *context) {
+
+	APP_LOG(APP_LOG_LEVEL_DEBUG, "TREDD: select button");
+
+	if (mode == TIME) {
+  		mode = DATE;
+  	} else if (mode == DATE) {
+  		mode = CHRONO;
+  	} else if (mode == CHRONO) {
+  		mode = TIME;
+  	} 
+
+}
+
+void chrono_start_stop_click_handler(ClickRecognizerRef recognizer, void *context) {
+
+	APP_LOG(APP_LOG_LEVEL_DEBUG, "TREDD: chrono start stop");
+
+	if (chrono_running == 0) {
+  		chrono_running = 1;
+  	} else  {
+  		chrono_running = 0;
+  	} 
+
+}
+
+void chrono_reset_click_handler(ClickRecognizerRef recognizer, void *context) {
+
+	APP_LOG(APP_LOG_LEVEL_DEBUG, "TREDD: chrono reset");
+
+	chrono_minutes = 0;
+	chrono_seconds = 0;
+
+}
+
+void config_provider(Window *window) {
+ // single click / repeat-on-hold config:
+	window_single_click_subscribe(BUTTON_ID_SELECT, select_single_click_handler);
+	window_single_click_subscribe(BUTTON_ID_UP, chrono_start_stop_click_handler);
+	window_single_click_subscribe(BUTTON_ID_DOWN, chrono_reset_click_handler);
+
+//   window_single_repeating_click_subscribe(BUTTON_ID_SELECT, 1000, select_single_click_handler);
+//   // multi click config:
+//   window_multi_click_subscribe(BUTTON_ID_SELECT, 2, 10, 0, true, select_multi_click_handler);
+//   // long click config:
+//   window_long_click_subscribe(BUTTON_ID_SELECT, 700, select_long_click_handler, select_long_click_release_handler);
+}
 
 static void init(void) {
 	APP_LOG(APP_LOG_LEVEL_DEBUG, "TREDD: init being called");
@@ -331,6 +429,7 @@ static void init(void) {
 
 // 	accel_tap_service_subscribe(accel_tap_handler);
 
+	window_set_click_config_provider(window, (ClickConfigProvider) config_provider);
 
 }
 
