@@ -93,9 +93,11 @@ static void hour_vibe(struct tm *current_time) {
 
 }
 
-
+static struct tm *last_time;
 
 static void update_display(struct tm *current_time) {
+
+	last_time = current_time;
 
 	if (mode == TIME) {
   		APP_LOG(APP_LOG_LEVEL_DEBUG, "TREDD: tick --- %d %d %d", current_time->tm_hour, current_time->tm_min, current_time->tm_sec);
@@ -106,12 +108,14 @@ static void update_display(struct tm *current_time) {
   	} 
 
 	if (mode == DATE) {
-// 		date_timer--;
-//   		APP_LOG(APP_LOG_LEVEL_DEBUG, "TREDD: date_timer %d", date_timer);
-// 		if (date_timer == 0) {
-//   			APP_LOG(APP_LOG_LEVEL_DEBUG, "TREDD: switch to time mode");
-// 		}
-// 		
+		date_timer--;
+  		APP_LOG(APP_LOG_LEVEL_DEBUG, "TREDD: date_timer %d", date_timer);
+		if (date_timer == 0) {
+  			APP_LOG(APP_LOG_LEVEL_DEBUG, "TREDD: switch to time mode");
+  			mode = TIME;
+		}
+
+
 // 		APP_LOG(APP_LOG_LEVEL_DEBUG, "TREDD: date mode %d %d ", current_time->tm_mon, current_time->tm_mday);
 		
 		
@@ -187,6 +191,7 @@ static void show_this(int hour, int minutes) {
   	if (hour == last_hour) {
   		return;
   	}
+  	
   	last_hour = hour;
   	
 	hour = hour % 12;
@@ -283,11 +288,17 @@ void select_single_click_handler(ClickRecognizerRef recognizer, void *context) {
 
 	if (mode == TIME) {
   		mode = DATE;
+  		date_timer = 10;
   	} else if (mode == DATE) {
-  		mode = CHRONO;
-  	} else if (mode == CHRONO) {
   		mode = TIME;
-  	} 
+		// mode = CHRONO;
+  	}
+  	
+  	update_display(last_time);
+  	
+//   	 else if (mode == CHRONO) {
+//   		mode = TIME;
+//   	} 
 
 }
 
