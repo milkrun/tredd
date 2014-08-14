@@ -24,9 +24,11 @@ static PropertyAnimation *minute_animation_3;
 static GBitmap *tread_hour_1_image;
 static BitmapLayer *tread_hour_1_layer;
 static BitmapLayer *tread_hour_2_layer;
+static BitmapLayer *tread_hour_3_layer;
 
 static PropertyAnimation *hour_animation_1;
 static PropertyAnimation *hour_animation_2;
+static PropertyAnimation *hour_animation_3;
 
 // overlay
 
@@ -248,23 +250,47 @@ static void show_this(int hour, int minute) {
   		return;
   	}
   	
-	hour = hour % 12;
+  	int fake_hour = hour;
+      		
+	if (hour == 0 && last_hour == 11) {
+		fake_hour = 12;
+	}
+
+	int x1 = getHourX(last_hour);
+	int x2 = x1 - hour_width;
+	int x3 = x1 + hour_width;
     
-	int x = 10 - hour * 62 ;
-  
-//   layer_set_frame((Layer*) (&tread_hour_1.layer.layer), GRect(x, hour_y, hour_width, hour_height));
-  
-  	GRect hour_rect = (GRect) {
-		.origin = { .x = x, .y = hour_y },
+  	GRect hour_start_rect_1 = (GRect) {
+		.origin = { .x = x1, .y = hour_y },
 		.size = tread_hour_1_image->bounds.size
 	};
 
-//   	int x2 = getHourX(hour - 1);
-
-  	int x2 = getHourX(last_hour);
-  
-  	GRect hour_start_rect = (GRect) {
+  	GRect hour_start_rect_2 = (GRect) {
 		.origin = { .x = x2, .y = hour_y },
+		.size = tread_hour_1_image->bounds.size
+	};
+
+  	GRect hour_start_rect_3 = (GRect) {
+		.origin = { .x = x3, .y = hour_y },
+		.size = tread_hour_1_image->bounds.size
+	};
+
+  	int xx1 = getHourX(fake_hour);
+  	int xx2 = xx1 - hour_width;
+  	int xx3 = xx1 + hour_width;
+  
+  	GRect hour_dest_rect_1 = (GRect) {
+		.origin = { .x = xx1, .y = hour_y },
+		.size = tread_hour_1_image->bounds.size
+	};
+
+  	GRect hour_dest_rect_2 = (GRect) {
+		.origin = { .x = xx2, .y = hour_y },
+		.size = tread_hour_1_image->bounds.size
+	};
+
+  	GRect hour_dest_rect_3 = (GRect) {
+		.origin = { .x = xx3, .y = hour_y },
 		.size = tread_hour_1_image->bounds.size
 	};
 
@@ -272,46 +298,26 @@ static void show_this(int hour, int minute) {
 	if (hour_animation_1 != NULL) {
    		animation_destroy((Animation*) hour_animation_1);
    	}
-  
-    hour_animation_1 = property_animation_create_layer_frame(bitmap_layer_get_layer(tread_hour_1_layer), &hour_start_rect, &hour_rect);
-  	animation_set_duration((Animation*) hour_animation_1, 1000);
-//  animation_set_curve((Animation*) hour_animation_1, AnimationCurveEaseOut);
-    animation_schedule((Animation*) hour_animation_1);
-
-  
-//  	layer_set_frame(bitmap_layer_get_layer(tread_hour_1_layer), GRect(x, hour_y, hour_width, hour_height));
-
-  
-	int xx;
-  
-  	if (x < -62) {
-		xx = x + tread_hour_1_image->bounds.size.w;
-	} else {
-		xx = x - tread_hour_1_image->bounds.size.w;
-	}
-  
-  	if (hour_animation_2 != NULL) {
+	if (hour_animation_2 != NULL) {
    		animation_destroy((Animation*) hour_animation_2);
    	}
-
-  	GRect hour_rect_2 = (GRect) {
-		.origin = { .x = xx, .y = hour_y},
-		.size = tread_hour_1_image->bounds.size
-	};
-
-  	int xx2 = xx + 62;
+	if (hour_animation_3 != NULL) {
+   		animation_destroy((Animation*) hour_animation_3);
+   	}
   
-  	GRect hour_start_rect_2 = (GRect) {
-		.origin = { .x = xx2, .y = hour_y},
-		.size = tread_hour_1_image->bounds.size
-	};
+	int anim_time = 500;
+  
+    hour_animation_1 = property_animation_create_layer_frame(bitmap_layer_get_layer(tread_hour_1_layer), &hour_start_rect_1, &hour_dest_rect_1);
+  	animation_set_duration((Animation*) hour_animation_1, anim_time);
+    animation_schedule((Animation*) hour_animation_1);
 
-  	// layer_set_frame(bitmap_layer_get_layer(tread_hour_2_layer), GRect(xx2, hour_y + 40, hour_width, hour_height));
-
-    hour_animation_2 = property_animation_create_layer_frame(bitmap_layer_get_layer(tread_hour_2_layer), &hour_start_rect_2, &hour_rect_2);
-  	animation_set_duration((Animation*) hour_animation_2, 1000);
-//  animation_set_curve((Animation*) hour_animation_2, AnimationCurveEaseOut);
+    hour_animation_2 = property_animation_create_layer_frame(bitmap_layer_get_layer(tread_hour_2_layer), &hour_start_rect_2, &hour_dest_rect_2);
+  	animation_set_duration((Animation*) hour_animation_2, anim_time);
     animation_schedule((Animation*) hour_animation_2);
+
+    hour_animation_3 = property_animation_create_layer_frame(bitmap_layer_get_layer(tread_hour_3_layer), &hour_start_rect_3, &hour_dest_rect_3);
+  	animation_set_duration((Animation*) hour_animation_3, anim_time);
+    animation_schedule((Animation*) hour_animation_3);
 
     last_hour = hour;
   	
@@ -424,8 +430,6 @@ static void init(void) {
 	hour_animation_1 = NULL;
 
 	// second hour tread
-
-// 	tread_hour_2_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_TREAD_12);
 		
 	GRect hour_frame_2 = (GRect) {
 		.origin = { .x = 42, .y = hour_y},
@@ -437,6 +441,19 @@ static void init(void) {
 	layer_add_child(window_layer, bitmap_layer_get_layer(tread_hour_2_layer));
 
 	hour_animation_2 = NULL;
+
+	// second hour tread
+		
+	GRect hour_frame_3 = (GRect) {
+		.origin = { .x = 42, .y = hour_y},
+		.size = tread_hour_1_image->bounds.size
+	};
+	
+	tread_hour_3_layer = bitmap_layer_create(hour_frame_3);
+	bitmap_layer_set_bitmap(tread_hour_3_layer, tread_hour_1_image);
+	layer_add_child(window_layer, bitmap_layer_get_layer(tread_hour_3_layer));
+
+	hour_animation_3 = NULL;
 
 	// load first copy of minute tread
 	tread_min_1_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_TREAD_60);
