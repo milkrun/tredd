@@ -7,19 +7,22 @@ static Window *window;
 static GBitmap *background_image;
 static BitmapLayer *background_layer;
 
-// you need 2 minute treads to appear as a continuous tread
+// you need 3 minute treads to appear as a continuous tread
+// with animation
 
 static GBitmap *tread_min_1_image;
 static BitmapLayer *tread_min_1_layer;
-
 static BitmapLayer *tread_min_2_layer;
+static BitmapLayer *tread_min_3_layer;
+
+static PropertyAnimation *minute_animation_1;
+static PropertyAnimation *minute_animation_2;
+static PropertyAnimation *minute_animation_3;
 
 // 2 hour treads
 
 static GBitmap *tread_hour_1_image;
 static BitmapLayer *tread_hour_1_layer;
-
-// static GBitmap *tread_hour_2_image;
 static BitmapLayer *tread_hour_2_layer;
 
 static PropertyAnimation *hour_animation_1;
@@ -65,7 +68,8 @@ static int getHourX(int h) {
 	return x;
 }
 
-static int last_hour = -1;
+static int last_hour = 0;
+static int last_minute = 0;
 
 
 static void show_this(int hour, int minutes);
@@ -95,6 +99,8 @@ static void hour_vibe(struct tm *current_time) {
 
 static struct tm *last_time;
 
+static int hour_test = 0;
+
 static void update_display(struct tm *current_time) {
 
 	last_time = current_time;
@@ -114,10 +120,6 @@ static void update_display(struct tm *current_time) {
   			APP_LOG(APP_LOG_LEVEL_DEBUG, "TREDD: switch to time mode");
   			mode = TIME;
 		}
-
-
-// 		APP_LOG(APP_LOG_LEVEL_DEBUG, "TREDD: date mode %d %d ", current_time->tm_mon, current_time->tm_mday);
-		
 		
 		int month = current_time->tm_mon + 1;
 		if (month == 12) {
@@ -130,7 +132,12 @@ static void update_display(struct tm *current_time) {
 	
 		// show time
 	
-		show_this(current_time->tm_hour, current_time->tm_min);
+		hour_test++;
+		hour_test %=12;
+	
+		show_this(hour_test, current_time->tm_sec);
+// 		show_this(current_time->tm_hour, current_time->tm_sec);
+// 		show_this(current_time->tm_hour, current_time->tm_min);
 	
 		hour_vibe(current_time);
 	
@@ -151,57 +158,100 @@ static void update_display(struct tm *current_time) {
 	
 }
   
-static void show_this(int hour, int minutes) {
+static int minute_y(int minute) {
+	return 84 - (6 * minute);  
+}
+  
+static void show_this(int hour, int minute) {
  
-  	int y = 84 - (6 * minutes);  
-  
-  
-  // if y is greater than 0, tread 2 should be above tread 1
-  // if y is less than 0, tread 2 should be above tread 1
+  if (minute != last_minute) {
 
-  int y2 = 0;
-  
-  if (y > -10) {
-      y2 = y - min_height;
-  } else {
-      y2 = y + min_height;
-  }
-  
-//   	APP_LOG(APP_LOG_LEVEL_DEBUG, "TREDD: y y2 %d %d", y, y2);
+		// special case from 59 --> 0
 
-    
-	layer_set_frame(bitmap_layer_get_layer(tread_min_1_layer), GRect(min_x, y, min_width, min_height));
+		int fake_minute = minute;
 
-	layer_set_frame(bitmap_layer_get_layer(tread_min_2_layer), GRect(min_x, y2, min_width, min_height));
-
+  		if (minute == 0 && last_minute == 59) {
+  			fake_minute = 60;
+  		}
   
-//	int hour = current_time->tm_hour;
+  
+	  	// use 3 treads so there is never a gap above or below
+
+		int yy = minute_y(last_minute);
+		int yy2 = yy - min_height;
+		int yy3 = yy + min_height;
+		
+		GRect min_start_rect_1 = (GRect) {
+			.origin = { .x = min_x, .y = yy },
+			.size = tread_min_1_image->bounds.size
+		};
+
+		GRect min_start_rect_2 = (GRect) {
+			.origin = { .x = min_x, .y = yy2 },
+			.size = tread_min_1_image->bounds.size
+		};
+
+		GRect min_start_rect_3 = (GRect) {
+			.origin = { .x = min_x, .y = yy3 },
+			.size = tread_min_1_image->bounds.size
+		};
+
+		int y = minute_y(fake_minute);
+		int y2 = y - min_height;
+		int y3 = y + min_height;
+		
+		GRect min_dest_rect_1 = (GRect) {
+			.origin = { .x = min_x, .y = y },
+			.size = tread_min_1_image->bounds.size
+		};
+
+		GRect min_dest_rect_2 = (GRect) {
+			.origin = { .x = min_x, .y = y2 },
+			.size = tread_min_1_image->bounds.size
+		};
+
+		GRect min_dest_rect_3 = (GRect) {
+			.origin = { .x = min_x, .y = y3 },
+			.size = tread_min_1_image->bounds.size
+		};
+
+		if (minute_animation_1 != NULL) {
+			animation_destroy((Animation*) minute_animation_1);
+		}
+		if (minute_animation_2 != NULL) {
+			animation_destroy((Animation*) minute_animation_2);
+		}
+		if (minute_animation_3 != NULL) {
+			animation_destroy((Animation*) minute_animation_3);
+		}
+  
+  		int anim_time = 500;
+  
+		minute_animation_1 = property_animation_create_layer_frame(bitmap_layer_get_layer(tread_min_1_layer), &min_start_rect_1, &min_dest_rect_1);
+		animation_set_duration((Animation*) minute_animation_1, anim_time);
+		animation_schedule((Animation*) minute_animation_1);
 	
-//	int hour = current_time->tm_sec / 4;
-
-// 	int hour = test_hour;
-
-// 	if (test_hour_count++ > 2) {
-// 		test_hour_count = 0;
-// 		test_hour++;
-// 	} else {
-// 		return;
-//   	}
+		minute_animation_2 = property_animation_create_layer_frame(bitmap_layer_get_layer(tread_min_2_layer), &min_start_rect_2, &min_dest_rect_2);
+		animation_set_duration((Animation*) minute_animation_2, anim_time);
+		animation_schedule((Animation*) minute_animation_2);
+	
+		minute_animation_3 = property_animation_create_layer_frame(bitmap_layer_get_layer(tread_min_3_layer), &min_start_rect_3, &min_dest_rect_3);
+		animation_set_duration((Animation*) minute_animation_3, anim_time);
+		animation_schedule((Animation*) minute_animation_3);
+  	
+  		last_minute = minute;
+  	}
+  	
+  	// finished with minutes
   	
   	if (hour == last_hour) {
   		return;
   	}
   	
-  	last_hour = hour;
-  	
 	hour = hour % 12;
-  
-  	// hour = 0;  // test noon
-  
+    
 	int x = 10 - hour * 62 ;
   
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "TREDD: hour %d x %d", hour, x);
-
 //   layer_set_frame((Layer*) (&tread_hour_1.layer.layer), GRect(x, hour_y, hour_width, hour_height));
   
   	GRect hour_rect = (GRect) {
@@ -209,7 +259,9 @@ static void show_this(int hour, int minutes) {
 		.size = tread_hour_1_image->bounds.size
 	};
 
-  	int x2 = getHourX(hour - 1);
+//   	int x2 = getHourX(hour - 1);
+
+  	int x2 = getHourX(last_hour);
   
   	GRect hour_start_rect = (GRect) {
 		.origin = { .x = x2, .y = hour_y },
@@ -261,12 +313,14 @@ static void show_this(int hour, int minutes) {
 //  animation_set_curve((Animation*) hour_animation_2, AnimationCurveEaseOut);
     animation_schedule((Animation*) hour_animation_2);
 
-  
+    last_hour = hour;
+  	
+
   
 }
 
 static void handle_minute_tick(struct tm *tick_time, TimeUnits units_changed) {
-  update_display(tick_time);
+  	update_display(tick_time);
 }
 
 // void accel_tap_handler(AccelAxisType axis, int32_t direction) {
@@ -324,7 +378,8 @@ void chrono_reset_click_handler(ClickRecognizerRef recognizer, void *context) {
 }
 
 void config_provider(Window *window) {
- // single click / repeat-on-hold config:
+ 	// single click / repeat-on-hold config:
+	
 	window_single_click_subscribe(BUTTON_ID_SELECT, select_single_click_handler);
 	window_single_click_subscribe(BUTTON_ID_UP, chrono_start_stop_click_handler);
 	window_single_click_subscribe(BUTTON_ID_DOWN, chrono_reset_click_handler);
@@ -396,11 +451,16 @@ static void init(void) {
 	layer_add_child(window_layer, bitmap_layer_get_layer(tread_min_1_layer));
 
 	// load second copy of minute tread
-// 	tread_min_2_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_TREAD_60);
  
 	tread_min_2_layer = bitmap_layer_create(min_frame);
 	bitmap_layer_set_bitmap(tread_min_2_layer, tread_min_1_image);
 	layer_add_child(window_layer, bitmap_layer_get_layer(tread_min_2_layer));
+
+	// load 3rd minute tread
+
+	tread_min_3_layer = bitmap_layer_create(min_frame);
+	bitmap_layer_set_bitmap(tread_min_3_layer, tread_min_1_image);
+	layer_add_child(window_layer, bitmap_layer_get_layer(tread_min_3_layer));
 
 	// add the transparent overlay
 	
@@ -475,7 +535,6 @@ static void deinit(void) {
   
 	window_destroy(window);
 
-//   	accel_tap_service_unsubscribe();
 }
 
 int main(void) {
