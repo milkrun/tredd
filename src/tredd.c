@@ -134,12 +134,13 @@ static void update_display(struct tm *current_time) {
 	
 		// show time
 	
-		hour_test++;
-		hour_test %=12;
-	
-		show_this(hour_test, current_time->tm_sec);
+// 		hour_test++;
+// 		hour_test %=12;
+// 		show_this(hour_test, current_time->tm_sec);
+		
 // 		show_this(current_time->tm_hour, current_time->tm_sec);
-// 		show_this(current_time->tm_hour, current_time->tm_min);
+
+		show_this(current_time->tm_hour, current_time->tm_min);
 	
 		hour_vibe(current_time);
 	
@@ -348,7 +349,7 @@ void select_single_click_handler(ClickRecognizerRef recognizer, void *context) {
 
 	if (mode == TIME) {
   		mode = DATE;
-  		date_timer = 10;
+  		date_timer = 5;
   	} else if (mode == DATE) {
   		mode = TIME;
 		// mode = CHRONO;

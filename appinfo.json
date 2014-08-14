@@ -3,14 +3,20 @@
   "shortName": "Tredd Face",
   "longName": "Tredd Face by Milk Run",
   "companyName": "Milk Run",
-  "versionCode": 4,
-  "versionLabel": "1.1",
+  "versionCode": 5,
+  "versionLabel": "1.2",
   "watchapp": {
     "watchface": true
   },
   "appKeys": {},
   "resources": {
     "media": [
+      {
+        "menuIcon": true,
+        "type": "png",
+        "name": "IMAGE_MENU_ICON",
+        "file": "images/tredd_icon.png"
+      },
       {
         "type": "png",
         "name": "IMAGE_BACKGROUND",
