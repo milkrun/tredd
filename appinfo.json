@@ -3,8 +3,8 @@
   "shortName": "Tredd Face",
   "longName": "Tredd Face by Milk Run",
   "companyName": "Milk Run",
-  "versionCode": 5,
-  "versionLabel": "1.2",
+  "versionCode": 6,
+  "versionLabel": "1.3",
   "watchapp": {
     "watchface": true
   },

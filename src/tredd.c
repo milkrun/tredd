@@ -3,6 +3,7 @@
 #include "pebble.h"
 
 static Window *window;
+static MenuLayer *menu_layer;
 
 static GBitmap *background_image;
 static BitmapLayer *background_layer;
@@ -54,6 +55,14 @@ static int chrono_seconds = 0;
 static int chrono_running = 0;	// stopped 0 running 1
 
 
+#define BUZZ_KEY 100
+
+
+#define BUZZ_NOT 	0
+#define BUZZ_9to9  	1
+
+static int buzz_mode = BUZZ_9to9;
+
 static const int min_width = 60;
 static const int min_height = 360;
 static const int min_x = 144 - 60 - 10;
@@ -83,7 +92,10 @@ static void show_this(int hour, int minutes);
 
 static void hour_vibe(struct tm *current_time) {
 
-	if (current_time->tm_hour < 7) 
+	if (buzz_mode == BUZZ_NOT)
+		return;
+
+	if (current_time->tm_hour < 8) 
 		return;
 
 	if (current_time->tm_hour > 20) 
@@ -384,19 +396,178 @@ void chrono_reset_click_handler(ClickRecognizerRef recognizer, void *context) {
 
 }
 
+/////////////////////////////////////////////////////////////////
+
+static uint16_t menu_get_num_sections_callback(MenuLayer *menu_layer, void *data) {
+	return 1;
+}
+
+
+static uint16_t menu_get_num_rows_callback(MenuLayer *menu_layer, uint16_t section_index, void *data) {
+  switch (section_index) {
+    case 0:
+      return 2;
+
+//     case 1:
+//       return NUM_SECOND_MENU_ITEMS;
+
+    default:
+      return 0;
+  }
+}
+
+static int16_t menu_get_header_height_callback(MenuLayer *menu_layer, uint16_t section_index, void *data) {
+  // This is a define provided in pebble.h that you may use for the default height
+  return MENU_CELL_BASIC_HEADER_HEIGHT;
+}
+
+// Here we draw what each header is
+static void menu_draw_header_callback(GContext* ctx, const Layer *cell_layer, uint16_t section_index, void *data) {
+  // Determine which section we're working with
+  switch (section_index) {
+    case 0:
+      // Draw title text in the section header
+		graphics_context_set_fill_color(ctx, GColorWhite);
+		graphics_fill_rect(ctx,  
+			(GRect){ .origin = GPointZero, .size = layer_get_frame((Layer*) cell_layer).size }, 0, GCornersAll);
+      menu_cell_basic_header_draw(ctx, cell_layer, "Settings");
+      break;
+
+    case 1:
+      menu_cell_basic_header_draw(ctx, cell_layer, "Exit");
+      break;
+  }
+}
+
+// This is the menu item draw callback where you specify what each item should look like
+static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuIndex *cell_index, void *data) {
+  // Determine which section we're going to draw in
+  switch (cell_index->section) {
+    case 0:
+      // Use the row to specify which item we'll draw
+      switch (cell_index->row) {
+        case 0:
+          // This is a basic menu item with a title and subtitle
+  			graphics_context_set_fill_color(ctx, GColorWhite);
+          	graphics_fill_rect(ctx,  
+          		(GRect){ .origin = GPointZero, .size = layer_get_frame((Layer*) cell_layer).size }, 0, GCornersAll);
+         	
+         	if (buzz_mode == BUZZ_NOT) 
+         		menu_cell_basic_draw(ctx, cell_layer, "Buzz Hourly", "Off", NULL);
+         	else 
+         		menu_cell_basic_draw(ctx, cell_layer, "Buzz Hourly", "9AM to 9PM", NULL);
+          break;
+
+        case 1:
+  			graphics_context_set_fill_color(ctx, GColorWhite);
+          	graphics_fill_rect(ctx,  
+          		(GRect){ .origin = GPointZero, .size = layer_get_frame((Layer*) cell_layer).size }, 0, GCornersAll);
+          menu_cell_basic_draw(ctx, cell_layer, "Exit", "", NULL);
+          break;
+
+//         case 2:
+//           // Here we use the graphics context to draw something different
+//           // In this case, we show a strip of a watchface's background
+//           graphics_draw_bitmap_in_rect(ctx, menu_background,
+//               (GRect){ .origin = GPointZero, .size = layer_get_frame((Layer*) cell_layer).size });
+//           break;
+      }
+      break;
+
+    case 1:
+      switch (cell_index->row) {
+        case 0:
+          // There is title draw for something more simple than a basic menu item
+          menu_cell_title_draw(ctx, cell_layer, "Final Item");
+          break;
+      }
+  }
+}
+
+void config_provider(Window *window) ;
+
+// Here we capture when a user selects a menu item
+void menu_select_callback(MenuLayer *menu_layer, MenuIndex *cell_index, void *data) {
+
+	APP_LOG(APP_LOG_LEVEL_DEBUG, "TREDD: menu selected");
+
+  // Use the row to specify which item will receive the select action
+	switch (cell_index->row) {
+		// This is the buzz item
+		case 0:
+			APP_LOG(APP_LOG_LEVEL_DEBUG, "TREDD: buzz on hour toggle");
+			
+         	if (buzz_mode == BUZZ_NOT) {
+         		buzz_mode = BUZZ_9to9;
+         	} else {
+         		buzz_mode = BUZZ_NOT;
+         	}
+  			
+  			// save buzz value to storage	
+  			persist_write_int(BUZZ_KEY, buzz_mode);
+			
+			layer_mark_dirty(menu_layer_get_layer(menu_layer));
+
+		  break;
+		  
+		case 1:
+
+			APP_LOG(APP_LOG_LEVEL_DEBUG, "TREDD: exit menu");
+
+			// destroy the menu layer
+  			menu_layer_destroy(menu_layer);
+  			// set the old click provider
+			window_set_click_config_provider(window, (ClickConfigProvider) config_provider);
+
+		  break;
+		  
+		  
+	}
+
+
+
+}
+
+void settings_handler(ClickRecognizerRef recognizer, void *context) {
+
+	APP_LOG(APP_LOG_LEVEL_DEBUG, "TREDD: starting settings");
+
+	// Create the menu layer
+  	Layer *window_layer = window_get_root_layer(window);
+  	GRect bounds = layer_get_frame(window_layer);
+	menu_layer = menu_layer_create(bounds);
+
+	// Set all the callbacks for the menu layer
+	menu_layer_set_callbacks(menu_layer, NULL, (MenuLayerCallbacks){
+		.get_num_sections = menu_get_num_sections_callback,
+		.get_num_rows = menu_get_num_rows_callback,
+		.get_header_height = menu_get_header_height_callback,
+		.draw_header = menu_draw_header_callback,
+		.draw_row = menu_draw_row_callback,
+		.select_click = menu_select_callback,
+	});
+
+	// Bind the menu layer's click config provider to the window for interactivity
+	menu_layer_set_click_config_onto_window(menu_layer, window);
+
+	// Add it to the window for display
+	layer_add_child(window_layer, menu_layer_get_layer(menu_layer));
+
+}
+
 void config_provider(Window *window) {
  	// single click / repeat-on-hold config:
 	
 	window_single_click_subscribe(BUTTON_ID_SELECT, select_single_click_handler);
 	window_single_click_subscribe(BUTTON_ID_UP, chrono_start_stop_click_handler);
-	window_single_click_subscribe(BUTTON_ID_DOWN, chrono_reset_click_handler);
+// 	window_single_click_subscribe(BUTTON_ID_DOWN, chrono_reset_click_handler);
+	window_single_click_subscribe(BUTTON_ID_DOWN, settings_handler);
 
-//   window_single_repeating_click_subscribe(BUTTON_ID_SELECT, 1000, select_single_click_handler);
-//   // multi click config:
-//   window_multi_click_subscribe(BUTTON_ID_SELECT, 2, 10, 0, true, select_multi_click_handler);
-//   // long click config:
-//   window_long_click_subscribe(BUTTON_ID_SELECT, 700, select_long_click_handler, select_long_click_release_handler);
 }
+
+
+
+
 
 static void init(void) {
 	APP_LOG(APP_LOG_LEVEL_DEBUG, "TREDD: init being called");
@@ -504,9 +675,18 @@ static void init(void) {
 	bitmap_layer_set_compositing_mode(black_image_layer, GCompOpClear);
 	layer_add_child(window_layer, bitmap_layer_get_layer(black_image_layer));
 
+	// update the buzz key from persistent storage
+
+	buzz_mode = persist_exists(BUZZ_KEY) ? persist_read_int(BUZZ_KEY) : BUZZ_NOT;
+
+  	if (buzz_mode == BUZZ_NOT) {
+		APP_LOG(APP_LOG_LEVEL_DEBUG, "TREDD: buzz is off");
+  	} else {
+		APP_LOG(APP_LOG_LEVEL_DEBUG, "TREDD: buzz is on");
+  	}
+
 
 	// update time after init to avoid the unsightly wait
-
 
 	time_t now = time(NULL);
 	struct tm *tick_time = localtime(&now);
@@ -532,12 +712,16 @@ static void deinit(void) {
 	bitmap_layer_destroy(tread_min_1_layer);
 	layer_remove_from_parent(bitmap_layer_get_layer(tread_min_2_layer));
 	bitmap_layer_destroy(tread_min_2_layer);
+	layer_remove_from_parent(bitmap_layer_get_layer(tread_min_3_layer));
+	bitmap_layer_destroy(tread_min_3_layer);
 	gbitmap_destroy(tread_min_1_image);
 	
 	layer_remove_from_parent(bitmap_layer_get_layer(tread_hour_1_layer));
 	bitmap_layer_destroy(tread_hour_1_layer);
 	layer_remove_from_parent(bitmap_layer_get_layer(tread_hour_2_layer));
 	bitmap_layer_destroy(tread_hour_2_layer);
+	layer_remove_from_parent(bitmap_layer_get_layer(tread_hour_3_layer));
+	bitmap_layer_destroy(tread_hour_3_layer);
 	gbitmap_destroy(tread_hour_1_image);
 	
 	layer_remove_from_parent(bitmap_layer_get_layer(white_image_layer));
@@ -550,6 +734,11 @@ static void deinit(void) {
 
 	property_animation_destroy(hour_animation_1);
 	property_animation_destroy(hour_animation_2);
+	property_animation_destroy(hour_animation_3);
+  
+	property_animation_destroy(minute_animation_1);
+	property_animation_destroy(minute_animation_2);
+	property_animation_destroy(minute_animation_3);
   
 	window_destroy(window);
 
